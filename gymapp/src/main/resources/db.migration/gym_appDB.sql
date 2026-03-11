@@ -1,151 +1,94 @@
--- =========================
--- CREACIÓN BASE DE DATOS
--- =========================
-DROP DATABASE IF EXISTS gym_app;
-CREATE DATABASE gym_app;
-USE gym_app;
+-- 1. CREACIÓN DE LA BASE DE DATOS
+CREATE DATABASE IF NOT EXISTS gimnasio_app DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE gimnasio_app;
 
--- =========================
--- USERS
--- =========================
-CREATE TABLE users (
+-- 2. TABLA DE USUARIOS (Sincronizada con Firebase Auth)
+CREATE TABLE IF NOT EXISTS usuarios (
+    id VARCHAR(255) PRIMARY KEY, -- El UID que viene de Firebase
+    nombre VARCHAR(100) NOT NULL,
+    foto_url VARCHAR(255),
+    rol ENUM('admin', 'usuario') DEFAULT 'usuario',
+    peso FLOAT,
+    altura FLOAT,
+    edad INT,
+    sexo ENUM('masculino', 'femenino', 'otro'),
+    actividad_diaria ENUM('sedentario', 'ligero', 'moderado', 'activo', 'muy_activo'),
+    objetivo ENUM('volumen', 'definicion'),
+    calorias_objetivo INT,
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 3. TABLA DE EJERCICIOS (Catálogo general)
+CREATE TABLE IF NOT EXISTS ejercicios (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    role ENUM('admin','user') DEFAULT 'user',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    nombre VARCHAR(100) NOT NULL,
+    video_url VARCHAR(255),
+    descripcion TEXT
 );
 
--- =========================
--- PROFILES
--- =========================
-CREATE TABLE profiles (
-    user_id INT PRIMARY KEY,
-    full_name VARCHAR(100),
-    photo_url VARCHAR(255),
-    weight DECIMAL(5,2),
-    height DECIMAL(5,2),
-    age INT,
-    sex ENUM('male','female','other'),
-    daily_activity_level TINYINT,
-    goal ENUM('volumen','definicion'),
-    daily_calories_target INT,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
--- =========================
--- ROUTINES
--- =========================
-CREATE TABLE routines (
+-- 4. TABLA DE RUTINAS
+CREATE TABLE IF NOT EXISTS rutinas (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    level TINYINT,
-    is_public BOOLEAN DEFAULT TRUE,
-    created_by INT NULL,
-    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+    nombre VARCHAR(100) NOT NULL,
+    nivel INT CHECK (nivel BETWEEN 1 AND 3),
+    es_personalizada BOOLEAN DEFAULT FALSE,
+    creado_por VARCHAR(255), 
+    FOREIGN KEY (creado_por) REFERENCES usuarios(id) ON DELETE CASCADE
 );
 
--- =========================
--- EXERCISES
--- =========================
-CREATE TABLE exercises (
+-- 5. RELACIÓN RUTINAS - EJERCICIOS (Contenido de cada rutina)
+CREATE TABLE IF NOT EXISTS rutina_ejercicios (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    description TEXT,
-    video_url VARCHAR(255)
+    rutina_id INT,
+    ejercicio_id INT,
+    series INT DEFAULT 3,
+    repeticiones INT DEFAULT 12,
+    FOREIGN KEY (rutina_id) REFERENCES rutinas(id) ON DELETE CASCADE,
+    FOREIGN KEY (ejercicio_id) REFERENCES ejercicios(id) ON DELETE CASCADE
 );
 
--- =========================
--- ROUTINE_EXERCISES
--- =========================
-CREATE TABLE routine_exercises (
-    routine_id INT,
-    exercise_id INT,
-    sets INT NOT NULL,
-    reps INT NOT NULL,
-    order_index INT,
-    PRIMARY KEY (routine_id, exercise_id),
-    FOREIGN KEY (routine_id) REFERENCES routines(id) ON DELETE CASCADE,
-    FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE CASCADE
-);
-
--- =========================
--- WORKOUT_SESSIONS
--- =========================
-CREATE TABLE workout_sessions (
+-- 6. REGISTRO DE PESOS (Progreso del usuario) - CORREGIDO
+CREATE TABLE IF NOT EXISTS registros_entrenamiento (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    routine_id INT,
-    session_date DATE NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (routine_id) REFERENCES routines(id)
+    usuario_id VARCHAR(255),
+    ejercicio_id INT,
+    peso_levantado FLOAT,
+    fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    FOREIGN KEY (ejercicio_id) REFERENCES ejercicios(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_workout_user_date 
-ON workout_sessions(user_id, session_date);
-
--- =========================
--- EXERCISE_LOGS
--- =========================
-CREATE TABLE exercise_logs (
+-- 7. TABLA DE RECETAS
+CREATE TABLE IF NOT EXISTS recetas (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    workout_session_id INT NOT NULL,
-    exercise_id INT NOT NULL,
-    set_number INT NOT NULL,
-    weight DECIMAL(6,2),
-    reps_done INT,
-    FOREIGN KEY (workout_session_id) REFERENCES workout_sessions(id) ON DELETE CASCADE,
-    FOREIGN KEY (exercise_id) REFERENCES exercises(id)
+    nombre VARCHAR(100) NOT NULL,
+    tipo ENUM('desayuno', 'comida', 'cena', 'snack'),
+    objetivo_apto ENUM('volumen', 'definicion', 'ambos'),
+    proteinas FLOAT,
+    carbohidratos FLOAT,
+    grasas FLOAT,
+    calorias_totales INT,
+    instrucciones TEXT,
+    foto_url VARCHAR(255)
 );
 
--- =========================
--- RECIPES
--- =========================
-CREATE TABLE recipes (
+-- 8. TABLA "MI DIETA" (Planificación semanal personalizada)
+CREATE TABLE IF NOT EXISTS mi_dieta (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    category ENUM('desayuno','comida','cena','snack'),
-    goal ENUM('volumen','definicion'),
-    calories INT,
-    protein DECIMAL(6,2),
-    carbs DECIMAL(6,2),
-    fats DECIMAL(6,2),
-    instructions TEXT
+    usuario_id VARCHAR(255),
+    receta_id INT,
+    dia_semana ENUM('lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'),
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    FOREIGN KEY (receta_id) REFERENCES recetas(id) ON DELETE CASCADE
 );
 
--- =========================
--- DIETS
--- =========================
-CREATE TABLE diets (
+-- 9. TABLA DE ACTIVIDAD DIARIA (Pasos y Calorías) - CORREGIDO
+CREATE TABLE IF NOT EXISTS actividad_diaria (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    name VARCHAR(100),
-    is_active BOOLEAN DEFAULT TRUE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
--- =========================
--- DIET_PLANS
--- =========================
-CREATE TABLE diet_plans (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    diet_id INT NOT NULL,
-    recipe_id INT NOT NULL,
-    day_of_week TINYINT CHECK (day_of_week BETWEEN 1 AND 7),
-    FOREIGN KEY (diet_id) REFERENCES diets(id) ON DELETE CASCADE,
-    FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
-);
-
--- =========================
--- DAILY_ACTIVITY
--- =========================
-CREATE TABLE daily_activity (
-    user_id INT NOT NULL,
-    activity_date DATE NOT NULL,
-    steps INT DEFAULT 0,
-    km DECIMAL(6,2),
-    calories_burned INT,
-    PRIMARY KEY (user_id, activity_date),
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    usuario_id VARCHAR(255),
+    pasos INT DEFAULT 0,
+    km_recorridos FLOAT DEFAULT 0,
+    calorias_gastadas INT DEFAULT 0,
+    fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 );

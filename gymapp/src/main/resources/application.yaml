@@ -1,9 +1,19 @@
 spring:
-    application:
-        name: gym_app
-    datasource:
-        url: jdbc:mysql://localhost:3306/gym_app?createDatabaseIfNotExist=true
-        username: admin
-        password: bht0ITcN9bx5
-    jpa:
-        show-sql: true
+  application:
+    name: gymAppDB
+  datasource:
+    url: jdbc:mysql://localhost:3306/gymAppDB?createDatabaseIfNotExist=true&serverTimezone=UTC
+    username: admin
+    password: bht0ITcN9bx5
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+
+server:
+  port: 8080
