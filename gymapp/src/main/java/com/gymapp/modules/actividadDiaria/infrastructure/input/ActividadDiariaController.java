@@ -1,8 +1,9 @@
 package com.gymapp.modules.actividadDiaria.infrastructure.input;
 
-import com.gymapp.modules.actividadDiaria.application.ActividadDiariaUseCase;
+import com.gymapp.modules.actividadDiaria.application.ActividadDiariaService;
 import com.gymapp.modules.actividadDiaria.application.dto.ActividadDiariaRequest;
 import com.gymapp.modules.actividadDiaria.application.dto.ActividadDiariaResponse;
+import com.gymapp.modules.actividadDiaria.infrastructure.mapper.ActividadDiariaMapper;
 import com.gymapp.modules.actividadDiaria.domain.model.ActividadDiaria;
 
 import jakarta.validation.Valid;
@@ -19,51 +20,50 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ActividadDiariaController {
 
-    private final ActividadDiariaUseCase actividadDiariaUseCase;
+    private final ActividadDiariaService actividadDiariaService;
+    private final ActividadDiariaMapper actividadDiariaMapper;
 
     @GetMapping("/usuario/{usuarioId}")
     public ResponseEntity<List<ActividadDiariaResponse>> findByUsuarioId(@PathVariable String usuarioId) {
-        List<ActividadDiariaResponse> response = actividadDiariaUseCase.findByUsuarioId(usuarioId).stream()
-                .map(this::toResponse)
+
+        List<ActividadDiariaResponse> response = actividadDiariaService
+                .findByUsuarioId(usuarioId)
+                .stream()
+                .map(actividadDiariaMapper::toResponse)
                 .collect(Collectors.toList());
+
         return ResponseEntity.ok(response);
     }
 
     @PostMapping
-    public ResponseEntity<ActividadDiariaResponse> save(@Valid @RequestBody ActividadDiariaRequest request) {
-        ActividadDiaria saved = actividadDiariaUseCase.save(toDomain(request));
-        return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(saved));
+    public ResponseEntity<ActividadDiariaResponse> save(
+            @Valid @RequestBody ActividadDiariaRequest request) {
+
+        ActividadDiaria domain = actividadDiariaMapper.toDomain(request);
+
+        ActividadDiaria saved = actividadDiariaService.save(domain);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(actividadDiariaMapper.toResponse(saved));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ActividadDiariaResponse> update(@PathVariable Integer id, @Valid @RequestBody ActividadDiariaRequest request) {
-        ActividadDiaria updated = actividadDiariaUseCase.update(id, toDomain(request));
-        return ResponseEntity.ok(toResponse(updated));
+    public ResponseEntity<ActividadDiariaResponse> update(
+            @PathVariable Integer id,
+            @Valid @RequestBody ActividadDiariaRequest request) {
+
+        ActividadDiaria domain = actividadDiariaMapper.toDomain(request);
+
+        ActividadDiaria updated = actividadDiariaService.update(id, domain);
+
+        return ResponseEntity.ok(
+                actividadDiariaMapper.toResponse(updated));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
-        actividadDiariaUseCase.delete(id);
+        actividadDiariaService.delete(id);
         return ResponseEntity.noContent().build();
-    }
-
-    private ActividadDiaria toDomain(ActividadDiariaRequest request) {
-        return ActividadDiaria.builder()
-                .usuarioId(request.getUsuarioId())
-                .pasos(request.getPasos())
-                .kmRecorridos(request.getKmRecorridos())
-                .caloriasGastadas(request.getCaloriasGastadas())
-                .build();
-    }
-
-    private ActividadDiariaResponse toResponse(ActividadDiaria domain) {
-        return ActividadDiariaResponse.builder()
-                .id(domain.getId())
-                .usuarioId(domain.getUsuarioId())
-                .pasos(domain.getPasos())
-                .kmRecorridos(domain.getKmRecorridos())
-                .caloriasGastadas(domain.getCaloriasGastadas())
-                .fecha(domain.getFecha())
-                .build();
     }
 }

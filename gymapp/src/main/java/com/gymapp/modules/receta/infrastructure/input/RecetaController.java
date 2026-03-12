@@ -1,9 +1,10 @@
 package com.gymapp.modules.receta.infrastructure.input;
 
 import com.gymapp.modules.enums.ObjetivoReceta;
-import com.gymapp.modules.receta.application.RecetaUseCase;
+import com.gymapp.modules.receta.application.RecetaService;
 import com.gymapp.modules.receta.application.dto.RecetaRequest;
 import com.gymapp.modules.receta.application.dto.RecetaResponse;
+import com.gymapp.modules.receta.infrastructure.mapper.RecetaMapper;
 import com.gymapp.modules.receta.domain.model.Receta;
 
 import jakarta.validation.Valid;
@@ -20,75 +21,56 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RecetaController {
 
-    private final RecetaUseCase recetaUseCase;
+    private final RecetaService recetaService;
+    private final RecetaMapper recetaMapper;
 
     @GetMapping
     public ResponseEntity<List<RecetaResponse>> findAll() {
-        List<RecetaResponse> response = recetaUseCase.findAll().stream()
-                .map(this::toResponse)
+        List<RecetaResponse> response = recetaService.findAll()
+                .stream()
+                .map(recetaMapper::toResponse)
                 .collect(Collectors.toList());
+
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<RecetaResponse> findById(@PathVariable Integer id) {
-        return recetaUseCase.findById(id)
-                .map(r -> ResponseEntity.ok(toResponse(r)))
+        return recetaService.findById(id)
+                .map(recetaMapper::toResponse)
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/objetivo/{objetivo}")
     public ResponseEntity<List<RecetaResponse>> findByObjetivo(@PathVariable ObjetivoReceta objetivo) {
-        List<RecetaResponse> response = recetaUseCase.findByObjetivo(objetivo).stream()
-                .map(this::toResponse)
+        List<RecetaResponse> response = recetaService.findByObjetivo(objetivo)
+                .stream()
+                .map(recetaMapper::toResponse)
                 .collect(Collectors.toList());
+
         return ResponseEntity.ok(response);
     }
 
     @PostMapping
     public ResponseEntity<RecetaResponse> save(@Valid @RequestBody RecetaRequest request) {
-        Receta saved = recetaUseCase.save(toDomain(request));
-        return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(saved));
+        Receta domain = recetaMapper.toDomain(request);
+        Receta saved = recetaService.save(domain);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(recetaMapper.toResponse(saved));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<RecetaResponse> update(@PathVariable Integer id, @Valid @RequestBody RecetaRequest request) {
-        Receta updated = recetaUseCase.update(id, toDomain(request));
-        return ResponseEntity.ok(toResponse(updated));
+    public ResponseEntity<RecetaResponse> update(@PathVariable Integer id,
+                                                 @Valid @RequestBody RecetaRequest request) {
+        Receta domain = recetaMapper.toDomain(request);
+        Receta updated = recetaService.update(id, domain);
+        return ResponseEntity.ok(recetaMapper.toResponse(updated));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
-        recetaUseCase.delete(id);
+        recetaService.delete(id);
         return ResponseEntity.noContent().build();
-    }
-
-    private Receta toDomain(RecetaRequest request) {
-        return Receta.builder()
-                .nombre(request.getNombre())
-                .tipo(request.getTipo())
-                .objetivoApto(request.getObjetivoApto())
-                .proteinas(request.getProteinas())
-                .carbohidratos(request.getCarbohidratos())
-                .grasas(request.getGrasas())
-                .calorias_totales(request.getCalorias_totales())
-                .instrucciones(request.getInstrucciones())
-                .fotoUrl(request.getFotoUrl())
-                .build();
-    }
-
-    private RecetaResponse toResponse(Receta domain) {
-        return RecetaResponse.builder()
-                .id(domain.getId())
-                .nombre(domain.getNombre())
-                .tipo(domain.getTipo())
-                .objetivoApto(domain.getObjetivoApto())
-                .proteinas(domain.getProteinas())
-                .carbohidratos(domain.getCarbohidratos())
-                .grasas(domain.getGrasas())
-                .calorias_totales(domain.getCalorias_totales())
-                .instrucciones(domain.getInstrucciones())
-                .fotoUrl(domain.getFotoUrl())
-                .build();
     }
 }

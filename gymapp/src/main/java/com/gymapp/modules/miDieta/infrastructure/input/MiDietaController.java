@@ -1,8 +1,9 @@
 package com.gymapp.modules.miDieta.infrastructure.input;
 
-import com.gymapp.modules.miDieta.application.MiDietaUseCase;
+import com.gymapp.modules.miDieta.application.MiDietaService;
 import com.gymapp.modules.miDieta.application.dto.MiDietaRequest;
 import com.gymapp.modules.miDieta.application.dto.MiDietaResponse;
+import com.gymapp.modules.miDieta.infrastructure.mapper.MiDietaMapper;
 import com.gymapp.modules.miDieta.domain.model.MiDieta;
 
 import jakarta.validation.Valid;
@@ -19,42 +20,36 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class MiDietaController {
 
-    private final MiDietaUseCase miDietaUseCase;
+    private final MiDietaService miDietaService;
+    private final MiDietaMapper miDietaMapper;
 
     @GetMapping("/usuario/{usuarioId}")
     public ResponseEntity<List<MiDietaResponse>> findByUsuarioId(@PathVariable String usuarioId) {
-        List<MiDietaResponse> response = miDietaUseCase.findByUsuarioId(usuarioId).stream()
-                .map(this::toResponse)
+
+        List<MiDietaResponse> response = miDietaService.findByUsuarioId(usuarioId)
+                .stream()
+                .map(miDietaMapper::toResponse)
                 .collect(Collectors.toList());
+
         return ResponseEntity.ok(response);
     }
 
     @PostMapping
-    public ResponseEntity<MiDietaResponse> save(@Valid @RequestBody MiDietaRequest request) {
-        MiDieta saved = miDietaUseCase.save(toDomain(request));
-        return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(saved));
+    public ResponseEntity<MiDietaResponse> save(
+            @Valid @RequestBody MiDietaRequest request) {
+
+        MiDieta domain = miDietaMapper.toDomain(request);
+
+        MiDieta saved = miDietaService.save(domain);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(miDietaMapper.toResponse(saved));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
-        miDietaUseCase.delete(id);
+        miDietaService.delete(id);
         return ResponseEntity.noContent().build();
-    }
-
-    private MiDieta toDomain(MiDietaRequest request) {
-        return MiDieta.builder()
-                .usuarioId(request.getUsuarioId())
-                .recetaId(request.getRecetaId())
-                .diaSemana(request.getDiaSemana())
-                .build();
-    }
-
-    private MiDietaResponse toResponse(MiDieta domain) {
-        return MiDietaResponse.builder()
-                .id(domain.getId())
-                .usuarioId(domain.getUsuarioId())
-                .recetaId(domain.getRecetaId())
-                .diaSemana(domain.getDiaSemana())
-                .build();
     }
 }

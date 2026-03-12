@@ -11,31 +11,26 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class EjercicioService implements EjercicioUseCase {
+public class EjercicioService {
 
     private final EjercicioRepositoryPort ejercicioRepositoryPort;
 
-    @Override
     public Optional<Ejercicio> findById(Integer id) {
         return ejercicioRepositoryPort.findById(id);
     }
 
-    @Override
     public List<Ejercicio> findAll() {
         return ejercicioRepositoryPort.findAll();
     }
 
-    @Override
     public Ejercicio save(Ejercicio ejercicio) {
         return ejercicioRepositoryPort.save(ejercicio);
     }
 
-    @Override
     public Ejercicio update(Integer id, Ejercicio ejercicio) {
         return ejercicioRepositoryPort.update(id, ejercicio);
     }
 
-    @Override
     public void delete(Integer id) {
         ejercicioRepositoryPort.delete(id);
     }

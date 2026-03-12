@@ -10,21 +10,18 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class MiDietaService implements MiDietaUseCase {
+public class MiDietaService {
 
     private final MiDietaRepositoryPort miDietaRepositoryPort;
 
-    @Override
     public List<MiDieta> findByUsuarioId(String usuarioId) {
         return miDietaRepositoryPort.findByUsuarioId(usuarioId);
     }
 
-    @Override
     public MiDieta save(MiDieta miDieta) {
         return miDietaRepositoryPort.save(miDieta);
     }
 
-    @Override
     public void delete(Integer id) {
         miDietaRepositoryPort.delete(id);
     }

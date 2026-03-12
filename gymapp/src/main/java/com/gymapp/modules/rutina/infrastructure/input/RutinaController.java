@@ -1,9 +1,10 @@
 package com.gymapp.modules.rutina.infrastructure.input;
 
-import com.gymapp.modules.rutina.application.RutinaUseCase;
+import com.gymapp.modules.rutina.application.RutinaService;
 import com.gymapp.modules.rutina.application.dto.RutinaRequest;
 import com.gymapp.modules.rutina.application.dto.RutinaResponse;
 import com.gymapp.modules.rutina.domain.model.Rutina;
+import com.gymapp.modules.rutina.infrastructure.mapper.RutinaMapper;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,65 +20,58 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RutinaController {
 
-    private final RutinaUseCase rutinaUseCase;
+    private final RutinaService rutinaService;
+    private final RutinaMapper rutinaMapper;
 
     @GetMapping
     public ResponseEntity<List<RutinaResponse>> findAll() {
-        List<RutinaResponse> response = rutinaUseCase.findAll().stream()
-                .map(this::toResponse)
+        List<RutinaResponse> response = rutinaService.findAll()
+                .stream()
+                .map(rutinaMapper::toResponse)
                 .collect(Collectors.toList());
+
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<RutinaResponse> findById(@PathVariable Integer id) {
-        return rutinaUseCase.findById(id)
-                .map(r -> ResponseEntity.ok(toResponse(r)))
+        return rutinaService.findById(id)
+                .map(rutinaMapper::toResponse)
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/usuario/{usuarioId}")
     public ResponseEntity<List<RutinaResponse>> findByUsuarioId(@PathVariable String usuarioId) {
-        List<RutinaResponse> response = rutinaUseCase.findByUsuarioId(usuarioId).stream()
-                .map(this::toResponse)
+        List<RutinaResponse> response = rutinaService.findByUsuarioId(usuarioId)
+                .stream()
+                .map(rutinaMapper::toResponse)
                 .collect(Collectors.toList());
+
         return ResponseEntity.ok(response);
     }
 
     @PostMapping
     public ResponseEntity<RutinaResponse> save(@Valid @RequestBody RutinaRequest request) {
-        Rutina saved = rutinaUseCase.save(toDomain(request));
-        return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(saved));
+        Rutina domain = rutinaMapper.toDomain(request);
+        Rutina saved = rutinaService.save(domain);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(rutinaMapper.toResponse(saved));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<RutinaResponse> update(@PathVariable Integer id, @Valid @RequestBody RutinaRequest request) {
-        Rutina updated = rutinaUseCase.update(id, toDomain(request));
-        return ResponseEntity.ok(toResponse(updated));
+    public ResponseEntity<RutinaResponse> update(@PathVariable Integer id,
+            @Valid @RequestBody RutinaRequest request) {
+        Rutina domain = rutinaMapper.toDomain(request);
+        Rutina updated = rutinaService.update(id, domain);
+
+        return ResponseEntity.ok(rutinaMapper.toResponse(updated));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
-        rutinaUseCase.delete(id);
+        rutinaService.delete(id);
         return ResponseEntity.noContent().build();
-    }
-
-    private Rutina toDomain(RutinaRequest request) {
-        return Rutina.builder()
-                .nombre(request.getNombre())
-                .nivel(request.getNivel())
-                .esPersonalizada(request.getEsPersonalizada())
-                .creadoPor(request.getCreadoPor())
-                .build();
-    }
-
-    private RutinaResponse toResponse(Rutina domain) {
-        return RutinaResponse.builder()
-                .id(domain.getId())
-                .nombre(domain.getNombre())
-                .nivel(domain.getNivel())
-                .esPersonalizada(domain.getEsPersonalizada())
-                .creadoPor(domain.getCreadoPor())
-                .build();
     }
 }

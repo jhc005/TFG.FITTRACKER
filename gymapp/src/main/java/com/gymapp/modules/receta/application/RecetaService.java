@@ -12,36 +12,30 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class RecetaService implements RecetaUseCase {
+public class RecetaService {
 
     private final RecetaRepositoryPort recetaRepositoryPort;
 
-    @Override
     public Optional<Receta> findById(Integer id) {
         return recetaRepositoryPort.findById(id);
     }
 
-    @Override
     public List<Receta> findAll() {
         return recetaRepositoryPort.findAll();
     }
 
-    @Override
     public List<Receta> findByObjetivo(ObjetivoReceta objetivo) {
         return recetaRepositoryPort.findByObjetivo(objetivo);
     }
 
-    @Override
     public Receta save(Receta receta) {
         return recetaRepositoryPort.save(receta);
     }
 
-    @Override
     public Receta update(Integer id, Receta receta) {
         return recetaRepositoryPort.update(id, receta);
     }
 
-    @Override
     public void delete(Integer id) {
         recetaRepositoryPort.delete(id);
     }

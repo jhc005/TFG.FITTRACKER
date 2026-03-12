@@ -1,8 +1,9 @@
 package com.gymapp.modules.registroEntrenamiento.infrastructure.input;
 
-import com.gymapp.modules.registroEntrenamiento.application.RegistroEntrenamientoUseCase;
+import com.gymapp.modules.registroEntrenamiento.application.RegistroEntrenamientoService;
 import com.gymapp.modules.registroEntrenamiento.application.dto.RegistroEntrenamientoRequest;
 import com.gymapp.modules.registroEntrenamiento.application.dto.RegistroEntrenamientoResponse;
+import com.gymapp.modules.registroEntrenamiento.infrastructure.mapper.RegistroEntrenamientoMapper;
 import com.gymapp.modules.registroEntrenamiento.domain.model.RegistroEntrenamiento;
 
 import jakarta.validation.Valid;
@@ -19,13 +20,19 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RegistroEntrenamientoController {
 
-    private final RegistroEntrenamientoUseCase registroEntrenamientoUseCase;
+    private final RegistroEntrenamientoService registroEntrenamientoService;
+    private final RegistroEntrenamientoMapper registroEntrenamientoMapper;
 
     @GetMapping("/usuario/{usuarioId}")
-    public ResponseEntity<List<RegistroEntrenamientoResponse>> findByUsuarioId(@PathVariable String usuarioId) {
-        List<RegistroEntrenamientoResponse> response = registroEntrenamientoUseCase.findByUsuarioId(usuarioId).stream()
-                .map(this::toResponse)
+    public ResponseEntity<List<RegistroEntrenamientoResponse>> findByUsuarioId(
+            @PathVariable String usuarioId) {
+
+        List<RegistroEntrenamientoResponse> response = registroEntrenamientoService
+                .findByUsuarioId(usuarioId)
+                .stream()
+                .map(registroEntrenamientoMapper::toResponse)
                 .collect(Collectors.toList());
+
         return ResponseEntity.ok(response);
     }
 
@@ -33,40 +40,30 @@ public class RegistroEntrenamientoController {
     public ResponseEntity<List<RegistroEntrenamientoResponse>> findByUsuarioIdAndEjercicioId(
             @PathVariable String usuarioId,
             @PathVariable Integer ejercicioId) {
-        List<RegistroEntrenamientoResponse> response = registroEntrenamientoUseCase
-                .findByUsuarioIdAndEjercicioId(usuarioId, ejercicioId).stream()
-                .map(this::toResponse)
+
+        List<RegistroEntrenamientoResponse> response = registroEntrenamientoService
+                .findByUsuarioIdAndEjercicioId(usuarioId, ejercicioId)
+                .stream()
+                .map(registroEntrenamientoMapper::toResponse)
                 .collect(Collectors.toList());
+
         return ResponseEntity.ok(response);
     }
 
     @PostMapping
-    public ResponseEntity<RegistroEntrenamientoResponse> save(@Valid @RequestBody RegistroEntrenamientoRequest request) {
-        RegistroEntrenamiento saved = registroEntrenamientoUseCase.save(toDomain(request));
-        return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(saved));
+    public ResponseEntity<RegistroEntrenamientoResponse> save(
+            @Valid @RequestBody RegistroEntrenamientoRequest request) {
+
+        RegistroEntrenamiento domain = registroEntrenamientoMapper.toDomain(request);
+        RegistroEntrenamiento saved = registroEntrenamientoService.save(domain);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(registroEntrenamientoMapper.toResponse(saved));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
-        registroEntrenamientoUseCase.delete(id);
+        registroEntrenamientoService.delete(id);
         return ResponseEntity.noContent().build();
-    }
-
-    private RegistroEntrenamiento toDomain(RegistroEntrenamientoRequest request) {
-        return RegistroEntrenamiento.builder()
-                .usuarioId(request.getUsuarioId())
-                .ejercicioId(request.getEjercicioId())
-                .pesoLevantado(request.getPesoLevantado())
-                .build();
-    }
-
-    private RegistroEntrenamientoResponse toResponse(RegistroEntrenamiento domain) {
-        return RegistroEntrenamientoResponse.builder()
-                .id(domain.getId())
-                .usuarioId(domain.getUsuarioId())
-                .ejercicioId(domain.getEjercicioId())
-                .pesoLevantado(domain.getPesoLevantado())
-                .fecha(domain.getFecha())
-                .build();
     }
 }

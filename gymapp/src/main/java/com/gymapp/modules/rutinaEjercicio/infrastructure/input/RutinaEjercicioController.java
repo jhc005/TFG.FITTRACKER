@@ -1,9 +1,10 @@
 package com.gymapp.modules.rutinaEjercicio.infrastructure.input;
 
-import com.gymapp.modules.rutinaEjercicio.application.RutinaEjercicioUseCase;
+import com.gymapp.modules.rutinaEjercicio.application.RutinaEjercicioService;
 import com.gymapp.modules.rutinaEjercicio.application.dto.RutinaEjercicioRequest;
 import com.gymapp.modules.rutinaEjercicio.application.dto.RutinaEjercicioResponse;
 import com.gymapp.modules.rutinaEjercicio.domain.model.RutinaEjercicio;
+import com.gymapp.modules.rutinaEjercicio.infrastructure.mapper.RutinaEjercicioMapper;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,50 +20,40 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RutinaEjercicioController {
 
-    private final RutinaEjercicioUseCase rutinaEjercicioUseCase;
+    private final RutinaEjercicioService rutinaEjercicioService;
+    private final RutinaEjercicioMapper rutinaEjercicioMapper;
 
     @GetMapping("/rutina/{rutinaId}")
     public ResponseEntity<List<RutinaEjercicioResponse>> findByRutinaId(@PathVariable Integer rutinaId) {
-        List<RutinaEjercicioResponse> response = rutinaEjercicioUseCase.findByRutinaId(rutinaId).stream()
-                .map(this::toResponse)
+        List<RutinaEjercicioResponse> response = rutinaEjercicioService.findByRutinaId(rutinaId)
+                .stream()
+                .map(rutinaEjercicioMapper::toResponse)
                 .collect(Collectors.toList());
+
         return ResponseEntity.ok(response);
     }
 
     @PostMapping
     public ResponseEntity<RutinaEjercicioResponse> save(@Valid @RequestBody RutinaEjercicioRequest request) {
-        RutinaEjercicio saved = rutinaEjercicioUseCase.save(toDomain(request));
-        return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(saved));
+        RutinaEjercicio domain = rutinaEjercicioMapper.toDomain(request);
+        RutinaEjercicio saved = rutinaEjercicioService.save(domain);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(rutinaEjercicioMapper.toResponse(saved));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<RutinaEjercicioResponse> update(@PathVariable Integer id, @Valid @RequestBody RutinaEjercicioRequest request) {
-        RutinaEjercicio updated = rutinaEjercicioUseCase.update(id, toDomain(request));
-        return ResponseEntity.ok(toResponse(updated));
+    public ResponseEntity<RutinaEjercicioResponse> update(@PathVariable Integer id,
+                                                          @Valid @RequestBody RutinaEjercicioRequest request) {
+        RutinaEjercicio domain = rutinaEjercicioMapper.toDomain(request);
+        RutinaEjercicio updated = rutinaEjercicioService.update(id, domain);
+
+        return ResponseEntity.ok(rutinaEjercicioMapper.toResponse(updated));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
-        rutinaEjercicioUseCase.delete(id);
+        rutinaEjercicioService.delete(id);
         return ResponseEntity.noContent().build();
-    }
-
-    private RutinaEjercicio toDomain(RutinaEjercicioRequest request) {
-        return RutinaEjercicio.builder()
-                .rutinaId(request.getRutinaId())
-                .ejercicioId(request.getEjercicioId())
-                .series(request.getSeries())
-                .repeticiones(request.getRepeticiones())
-                .build();
-    }
-
-    private RutinaEjercicioResponse toResponse(RutinaEjercicio domain) {
-        return RutinaEjercicioResponse.builder()
-                .id(domain.getId())
-                .rutinaId(domain.getRutinaId())
-                .ejercicioId(domain.getEjercicioId())
-                .series(domain.getSeries())
-                .repeticiones(domain.getRepeticiones())
-                .build();
     }
 }

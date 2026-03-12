@@ -1,5 +1,5 @@
 -- 1. CREACIÓN DE LA BASE DE DATOS
-CREATE DATABASE IF NOT EXISTS gimnasio_app DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS gimnasio_app ;
 USE gimnasio_app;
 
 -- 2. TABLA DE USUARIOS (Sincronizada con Firebase Auth)

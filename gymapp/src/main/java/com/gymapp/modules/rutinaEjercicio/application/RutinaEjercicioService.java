@@ -10,26 +10,22 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class RutinaEjercicioService implements RutinaEjercicioUseCase {
+public class RutinaEjercicioService  {
 
     private final RutinaEjercicioRepositoryPort rutinaEjercicioRepositoryPort;
 
-    @Override
     public List<RutinaEjercicio> findByRutinaId(Integer rutinaId) {
         return rutinaEjercicioRepositoryPort.findByRutinaId(rutinaId);
     }
 
-    @Override
     public RutinaEjercicio save(RutinaEjercicio re) {
         return rutinaEjercicioRepositoryPort.save(re);
     }
 
-    @Override
     public RutinaEjercicio update(Integer id, RutinaEjercicio re) {
         return rutinaEjercicioRepositoryPort.update(id, re);
     }
 
-    @Override
     public void delete(Integer id) {
         rutinaEjercicioRepositoryPort.delete(id);
     }
