@@ -1,0 +1,21 @@
+package com.gymapp.modules.actividadDiaria.domain.model;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class ActividadDiaria {
+    private Integer id;
+    private String usuarioId;
+    private Integer pasos;
+    private Float kmRecorridos;
+    private Integer caloriasGastadas;
+    private LocalDateTime fecha;
+}
